@@ -1,10 +1,11 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 static GROUP_REBOT_MSG_TEXT: &str = "text";
 static GROUP_REBOT_MSG_MARKDOWN: &str = "markdown";
 
 #[derive(Debug, Serialize)]
 enum MessageBody {
+    #[serde(rename = "text")]
     Text {
         /// Raw text content, up to 2048 bytes
         content: String,
@@ -13,13 +14,16 @@ enum MessageBody {
         /// To remind the specified members in the group (@Member). Use `@all`
         /// means to remind everyone. Use `mentioned_mobile_list` instead if the
         /// developer cannot get the userid.
+        #[serde(skip_serializing_if = "Option::is_none")]
         mentioned_list: Option<Vec<String>>,
         /// A list of mobile phone.
         ///
         /// To remind the group members corresponding to the mobile phone
         /// (@Member). Use `@all` means  to remind everyone in group.
+        #[serde(skip_serializing_if = "Option::is_none")]
         mentioned_mobile_list: Option<Vec<String>>,
     },
+    #[serde(rename = "markdown")]
     Markdown {
         /// markdown raw text content, up to 4096 bytes
         content: String,
@@ -58,6 +62,15 @@ impl Message {
             body: MessageBody::Markdown { content },
         }
     }
+}
+
+#[derive(Debug, Default, Deserialize)]
+pub struct SendResp {
+    #[serde(rename = "errcode")]
+    pub err_code: i64,
+
+    #[serde(rename = "errmsg")]
+    pub err_msg: String,
 }
 
 #[cfg(test)]

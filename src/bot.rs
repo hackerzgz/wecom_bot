@@ -121,3 +121,22 @@ impl WeComBotBuilder {
         self
     }
 }
+
+#[cfg(test)]
+mod botest {
+    use crate::message::{Message, SendResp};
+
+    use super::WeComBot;
+
+    #[test]
+    fn send_msg() {
+        let bot = WeComBot::new("693a91f6-7xxx-4bc4-97a0-0ec2sifa5aaa".to_string()).unwrap();
+        let resp: SendResp = bot.send(Message::text(
+            "say hi to wecom bot power by rust".to_string(),
+            None,
+            None,
+        )).unwrap();
+
+        assert_eq!(resp.err_code, 93000);
+    }
+}
