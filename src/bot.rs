@@ -2,7 +2,9 @@ use std::any;
 use std::fmt::Debug;
 use std::time::Duration;
 
-use reqwest::blocking::Client;
+#[cfg(feature = "asycn_api")]
+use reqwest::Client;
+
 use serde::de::DeserializeOwned;
 use thiserror::Error;
 
@@ -14,7 +16,10 @@ pub enum WeComError {
     #[error("wecom bot key not set")]
     KeyNotFound,
     #[error("network failed: {}", source)]
-    Network { source: reqwest::Error },
+    Network {
+        #[from]
+        source: reqwest::Error,
+    },
     #[error("wecom bot server error: {}", status)]
     Http { status: reqwest::StatusCode },
     #[error("could not parse {} data from JSON: {}", typename, source)]
@@ -58,12 +63,7 @@ impl WeComBot {
     where
         T: DeserializeOwned,
     {
-        let resp = self
-            .client
-            .post(&self.url)
-            .json(&msg)
-            .send()
-            .map_err(WeComError::network)?;
+        let resp = self.client.post(&self.url).json(&msg).send()?;
         let status = resp.status();
         if status.is_server_error() {
             return Err(WeComError::Http { status });
@@ -122,6 +122,94 @@ impl WeComBotBuilder {
     }
 }
 
+#[cfg(feature = "async_api")]
+pub struct WeComBotAsync {
+    url: String,
+    client: reqwest::Client,
+}
+
+#[cfg(feature = "async_api")]
+impl WeComBotAsync {
+    fn new(key: String) -> WeComResult<WeComBotAsync> {
+        WeComBotAsyncBuilder::new().key(key).build()
+    }
+
+    pub fn builder() -> WeComBotAsyncBuilder {
+        WeComBotAsyncBuilder::new()
+    }
+
+    pub async fn send<T>(&self, msg: Message) -> WeComResult<T>
+    where
+        T: DeserializeOwned,
+    {
+        let resp = self
+            .client
+            .post(&self.url)
+            .json(&msg)
+            .send()
+            .await
+            .map_err(WeComError::network)?;
+        let status = resp.status();
+        if status.is_server_error() {
+            return Err(WeComError::Http { status });
+        }
+
+        serde_json::from_slice::<T>(&resp.bytes().await?).map_err(WeComError::data_type::<T>)
+    }
+}
+
+#[cfg(feature = "async_api")]
+impl Debug for WeComBotAsync {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("WeComBot").field("url", &self.url).finish()
+    }
+}
+
+#[cfg(feature = "async_api")]
+#[derive(Debug, Default)]
+pub struct WeComBotAsyncBuilder {
+    key: Option<String>,
+    client: Option<reqwest::Client>,
+}
+
+#[cfg(feature = "async_api")]
+impl WeComBotAsyncBuilder {
+    pub fn new() -> WeComBotAsyncBuilder {
+        Self::default()
+    }
+
+    pub fn build(self) -> WeComResult<WeComBotAsync> {
+        if self.key.is_none() {
+            return Err(WeComError::KeyNotFound);
+        }
+
+        let client = self.client.unwrap_or(
+            reqwest::Client::builder()
+                .timeout(Duration::from_secs(10))
+                .build()
+                .unwrap(),
+        );
+
+        Ok(WeComBotAsync {
+            client,
+            url: format!(
+                "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key={}",
+                self.key.unwrap(),
+            ),
+        })
+    }
+
+    pub fn key(mut self, key: String) -> WeComBotAsyncBuilder {
+        self.key = Some(key);
+        self
+    }
+
+    pub fn client(mut self, client: reqwest::Client) -> WeComBotAsyncBuilder {
+        self.client = Some(client);
+        self
+    }
+}
+
 #[cfg(test)]
 mod botest {
     use crate::message::{Message, SendResp};
@@ -139,6 +227,20 @@ mod botest {
             ))
             .unwrap();
 
+        assert_eq!(resp.err_code, 93000);
+    }
+
+    #[tokio::test]
+    #[cfg(feature = "async_api")]
+    async fn send_msg_async() {
+        let bot =
+            super::WeComBotAsync::new("693a91f6-7xxx-4bc4-97a0-0ec2sifa5aaa".to_string()).unwrap();
+        let resp: SendResp = bot
+            .send(Message::markdown(
+                "> say hi to wecom bot power by rust".to_string(),
+            ))
+            .await
+            .unwrap();
         assert_eq!(resp.err_code, 93000);
     }
 }
