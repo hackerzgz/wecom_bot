@@ -2,9 +2,6 @@ use std::any;
 use std::fmt::Debug;
 use std::time::Duration;
 
-#[cfg(feature = "asycn_api")]
-use reqwest::Client;
-
 use serde::de::DeserializeOwned;
 use thiserror::Error;
 
