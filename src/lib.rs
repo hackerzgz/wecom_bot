@@ -6,7 +6,7 @@ mod bot;
 mod message;
 
 pub use bot::{WeComBot, WeComBotBuilder, WeComError};
-pub use message::Message;
+pub use message::{Message, SendResp};
 
 #[cfg(feature = "async_api")]
 pub use bot::{WeComBotAsync, WeComBotAsyncBuilder};
