@@ -12,7 +12,7 @@ Add this to your `Cargo.toml` or run `cargo add wecom_bot`:
 
 ```toml
 [dependencies]
-wecom_bot = "0.1.0"
+wecom_bot = "0.1.1"
 ```
 
 If you need to use __async client__:
