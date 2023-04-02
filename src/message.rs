@@ -1,7 +1,10 @@
 use serde::{Deserialize, Serialize};
 
+use crate::image::Image;
+
 static GROUP_REBOT_MSG_TEXT: &str = "text";
 static GROUP_REBOT_MSG_MARKDOWN: &str = "markdown";
+static GROUP_REBOT_MSG_IMAGE: &str = "image";
 
 #[derive(Debug, Serialize)]
 enum MessageBody {
@@ -27,6 +30,13 @@ enum MessageBody {
     Markdown {
         /// markdown raw text content, up to 4096 bytes
         content: String,
+    },
+    #[serde(rename = "markdown")]
+    Image {
+        /// base64 encoding of image content
+        base64: String,
+        /// md5 encoding of image(before base64 encoding) content
+        md5: String,
     },
 }
 
@@ -60,6 +70,14 @@ impl Message {
         Self {
             msg_type: GROUP_REBOT_MSG_MARKDOWN.to_string(),
             body: MessageBody::Markdown { content },
+        }
+    }
+
+    pub fn image(image: Image) -> Message {
+        let (base64, md5) = image.encode();
+        Self {
+            msg_type: GROUP_REBOT_MSG_IMAGE.to_string(),
+            body: MessageBody::Image { base64, md5 },
         }
     }
 }

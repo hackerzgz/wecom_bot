@@ -3,6 +3,7 @@
 //! A library for communicating with WeCom Bot instances.
 
 mod bot;
+mod image;
 mod message;
 
 pub use bot::{WeComBot, WeComBotBuilder, WeComError};

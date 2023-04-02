@@ -1,5 +1,6 @@
 use std::any;
 use std::fmt::Debug;
+use std::io;
 use std::time::Duration;
 
 use serde::de::DeserializeOwned;
@@ -25,6 +26,11 @@ pub enum WeComError {
         source: serde_json::Error,
         typename: &'static str,
     },
+    #[error("failed to read image file: {}", source)]
+    ImageRead {
+        #[from]
+        source: io::Error,
+    },
 }
 
 impl WeComError {
@@ -37,6 +43,10 @@ impl WeComError {
             source,
             typename: any::type_name::<T>(),
         }
+    }
+
+    pub fn image(source: io::Error) -> Self {
+        WeComError::ImageRead { source }
     }
 }
 
