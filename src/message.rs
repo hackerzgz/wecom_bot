@@ -31,7 +31,7 @@ enum MessageBody {
         /// markdown raw text content, up to 4096 bytes
         content: String,
     },
-    #[serde(rename = "markdown")]
+    #[serde(rename = "image")]
     Image {
         /// base64 encoding of image content
         base64: String,
@@ -111,6 +111,12 @@ mod message_tests {
         assert_eq!(
             "{\"msgtype\":\"markdown\",\"markdown\":{\"content\":\"# Markdown\"}}",
             serde_json::to_string(&md).unwrap()
+        );
+
+        let img = Message::image(Image::new(b"image".to_vec()));
+        assert_eq!(
+            "{\"msgtype\":\"image\",\"image\":{\"base64\":\"aW1hZ2U=\",\"md5\":\"78805a221a988e79ef3f42d7c5bfd418\"}}",
+            serde_json::to_string(&img).unwrap()
         );
     }
 }

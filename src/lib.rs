@@ -7,6 +7,7 @@ mod image;
 mod message;
 
 pub use bot::{WeComBot, WeComBotBuilder, WeComError};
+pub use image::Image;
 pub use message::{Message, SendResp};
 
 #[cfg(feature = "async_api")]
