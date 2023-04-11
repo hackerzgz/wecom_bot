@@ -145,7 +145,7 @@ impl WeComBotAsync {
         WeComBotAsyncBuilder::new()
     }
 
-    pub async fn send<T>(&self, msg: Message) -> WeComResult<T>
+    pub async fn send<T>(&self, msg: Message<'_>) -> WeComResult<T>
     where
         T: DeserializeOwned,
     {
@@ -229,8 +229,8 @@ mod botest {
         let resp: SendResp = bot
             .send(Message::text(
                 "say hi to wecom bot power by rust".to_string(),
-                None,
-                None,
+                None::<Vec<_>>,
+                None::<Vec<_>>,
             ))
             .unwrap();
 

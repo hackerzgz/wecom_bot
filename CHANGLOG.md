@@ -1,17 +1,16 @@
-Version 0.1.1 (not-release)
-===========================
+# Version 0.1.1 (not-release)
 
-Features
---------
+## Features
 
-- Message type `image` support.
+- Message type `image` and `news` support.
 
+## Performance
 
-Version 0.1.0 (2023-03-28)
-===========================
+- Use `Cow<str>` instead of `String` in Message body to avoid memory copy.
 
-Features
---------
+# Version 0.1.0 (2023-03-28)
+
+## Features
 
 - Message type `text` and `markdown` support.
-- Wecom bot __synchronize__ / __asynchronize__ client support.
+- Wecom bot **synchronize** / **asynchronize** client support.

@@ -6,6 +6,7 @@ all Message Type are implemented, but patches are welcome.
 
 [![Build status](https://github.com/hackerzgz/wecom_bot/workflows/Rust/badge.svg)](https://github.com/hackerzgz/wecom_bot/actions)
 
+
 ### Usage
 
 Add this to your `Cargo.toml` or run `cargo add wecom_bot`:
