@@ -28,7 +28,7 @@ use wecom_bot::{WeComBot, Message, SendResp};
 fn main() {
     let bot = WeComBot::new("YOUR-BOT-KEY".to_string());
 
-    let rsp: SendResp = bot.send(Message::markdown("> hello world")).build();
+    let rsp: SendResp = bot.send(Message::markdown("> hello world").build());
     assert_eq!(rsp.err_code, 0);
 }
 ```
