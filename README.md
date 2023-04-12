@@ -11,7 +11,7 @@ Add this to your `Cargo.toml` or run `cargo add wecom_bot`:
 
 ```toml
 [dependencies]
-wecom_bot = "0.1.1"
+wecom_bot = "0.2.0"
 ```
 
 If you need to use **async client**:
@@ -20,7 +20,7 @@ If you need to use **async client**:
 $ cargo add wecom_bot --features=async_api
 ```
 
-Here's a simple example that send a markdown message:
+Here's a simple example that send markdown and text messages by using blocking api:
 
 ```rust
 use wecom_bot::{WeComBot, Message, SendResp};
@@ -29,6 +29,10 @@ fn main() {
     let bot = WeComBot::new("YOUR-BOT-KEY".to_string());
 
     let rsp: SendResp = bot.send(Message::markdown("> hello world").build());
+    assert_eq!(rsp.err_code, 0);
+
+
+    let rsp: SendResp = bot.send(Message::text("hello world").mentioned_list(vec!["1000"]).build());
     assert_eq!(rsp.err_code, 0);
 }
 ```
