@@ -1,8 +1,9 @@
-# Version 0.1.1 (not-release)
+# Version 0.2.0 (not-release)
 
 ## Features
 
 - Message type `image` and `news` support.
+- Use `MessageBuilder` to set `mentioned_list` and `mentioned_mobile_list`.
 
 ## Performance
 

@@ -1,11 +1,9 @@
-WeComBot
-=====
+# WeComBot
 
 This library implements an interface to communicate with a WeCom Bot instance. Not
 all Message Type are implemented, but patches are welcome.
 
 [![Build status](https://github.com/hackerzgz/wecom_bot/workflows/Rust/badge.svg)](https://github.com/hackerzgz/wecom_bot/actions)
-
 
 ### Usage
 
@@ -16,7 +14,7 @@ Add this to your `Cargo.toml` or run `cargo add wecom_bot`:
 wecom_bot = "0.1.1"
 ```
 
-If you need to use __async client__:
+If you need to use **async client**:
 
 ```bash
 $ cargo add wecom_bot --features=async_api
@@ -30,7 +28,7 @@ use wecom_bot::{WeComBot, Message, SendResp};
 fn main() {
     let bot = WeComBot::new("YOUR-BOT-KEY".to_string());
 
-    let rsp: SendResp = bot.send(Message::markdown("> hello world"));
+    let rsp: SendResp = bot.send(Message::markdown("> hello world")).build();
     assert_eq!(rsp.err_code, 0);
 }
 ```
