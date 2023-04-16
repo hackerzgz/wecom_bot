@@ -49,82 +49,14 @@ enum MessageBody<'a> {
     },
 }
 
-#[derive(Debug, Clone, Serialize)]
-pub struct Message<'a> {
-    /// Type of message.
-    #[serde(rename = "msgtype")]
-    msg_type: &'static str,
-
-    #[serde(flatten)]
-    body: MessageBody<'a>,
-}
-
-impl<'a> Message<'a> {
-    pub fn text<S>(content: S) -> MessageBuilder<'a>
-    where
-        S: Into<Cow<'a, str>>,
-    {
-        MessageBuilder {
-            message: Self {
-                msg_type: GROUP_REBOT_MSG_TEXT,
-                body: MessageBody::Text {
-                    content: content.into(),
-                    mentioned_list: None,
-                    mentioned_mobile_list: None,
-                },
-            },
-        }
-    }
-
-    pub fn markdown<S>(content: S) -> MessageBuilder<'a>
-    where
-        S: Into<Cow<'a, str>>,
-    {
-        MessageBuilder {
-            message: Self {
-                msg_type: GROUP_REBOT_MSG_MARKDOWN,
-                body: MessageBody::Markdown {
-                    content: content.into(),
-                },
-            },
-        }
-    }
-
-    pub fn image(image: Image) -> MessageBuilder<'a> {
-        let (base64, md5) = image.encode();
-        MessageBuilder {
-            message: Self {
-                msg_type: GROUP_REBOT_MSG_IMAGE,
-                body: MessageBody::Image {
-                    base64: Cow::from(base64),
-                    md5: Cow::from(md5),
-                },
-            },
-        }
-    }
-
-    pub fn news(articles: Vec<Article<'a>>) -> MessageBuilder<'a> {
-        MessageBuilder {
-            message: Self {
-                msg_type: GROUP_REBOT_MSG_NEWS,
-                body: MessageBody::News { articles },
-            },
-        }
-    }
-}
-
-pub struct MessageBuilder<'a> {
-    message: Message<'a>,
-}
-
 macro_rules! inject_iter_fields {
     ($field_name:tt, $matched_type:path) => {
-        pub fn $field_name<S, I>(&mut self, iter: I) -> &mut Self
+        pub fn $field_name<S, I>(mut self, iter: I) -> Self
         where
             I: IntoIterator<Item = S>,
             S: Into<Cow<'a, str>>,
         {
-            match &mut self.message.body {
+            match &mut self.body {
                 $matched_type { $field_name, .. } => {
                     let vs: Vec<Cow<'a, str>> = iter.into_iter().map(Into::into).collect();
                     *$field_name = Some(vs);
@@ -136,9 +68,59 @@ macro_rules! inject_iter_fields {
     };
 }
 
-impl<'a> MessageBuilder<'a> {
-    pub fn build(&self) -> Message<'a> {
-        self.message.clone()
+#[derive(Debug, Clone, Serialize)]
+pub struct Message<'a> {
+    /// Type of message.
+    #[serde(rename = "msgtype")]
+    msg_type: &'static str,
+
+    #[serde(flatten)]
+    body: MessageBody<'a>,
+}
+
+impl<'a> Message<'a> {
+    pub fn text<S>(content: S) -> Self
+    where
+        S: Into<Cow<'a, str>>,
+    {
+        Self {
+            msg_type: GROUP_REBOT_MSG_TEXT,
+            body: MessageBody::Text {
+                content: content.into(),
+                mentioned_list: None,
+                mentioned_mobile_list: None,
+            },
+        }
+    }
+
+    pub fn markdown<S>(content: S) -> Self
+    where
+        S: Into<Cow<'a, str>>,
+    {
+        Self {
+            msg_type: GROUP_REBOT_MSG_MARKDOWN,
+            body: MessageBody::Markdown {
+                content: content.into(),
+            },
+        }
+    }
+
+    pub fn image(image: Image) -> Self {
+        let (base64, md5) = image.encode();
+        Self {
+            msg_type: GROUP_REBOT_MSG_IMAGE,
+            body: MessageBody::Image {
+                base64: Cow::from(base64),
+                md5: Cow::from(md5),
+            },
+        }
+    }
+
+    pub fn news(articles: Vec<Article<'a>>) -> Self {
+        Self {
+            msg_type: GROUP_REBOT_MSG_NEWS,
+            body: MessageBody::News { articles },
+        }
     }
 
     inject_iter_fields!(mentioned_list, MessageBody::Text);
@@ -218,30 +200,27 @@ mod message_tests {
     }
 
     fn serialize_text() {
-        let text = Message::text("Text-Only").build();
+        let text = Message::text("Text-Only");
         assert_eq!(
             "{\"msgtype\":\"text\",\"text\":{\"content\":\"Text-Only\"}}",
             serde_json::to_string(&text).unwrap()
         );
 
-        let text = Message::text("Title")
-            .mentioned_list(vec![String::new(), "uid2".to_string()])
-            .build();
+        let text = Message::text("Title").mentioned_list(vec![String::new(), "uid2".to_string()]);
         assert_eq!(
             "{\"msgtype\":\"text\",\"text\":{\"content\":\"Title\",\"mentioned_list\":[\"\",\"uid2\"]}}",
             serde_json::to_string(&text).unwrap()
         );
 
         let user_iter = vec!["uid1", "uid2"].into_iter();
-        let text = Message::text("User-Iter").mentioned_list(user_iter).build();
+        let text = Message::text("User-Iter").mentioned_list(user_iter);
         assert_eq!(
             "{\"msgtype\":\"text\",\"text\":{\"content\":\"User-Iter\",\"mentioned_list\":[\"uid1\",\"uid2\"]}}",
             serde_json::to_string(&text).unwrap()
         );
 
         let text = Message::text("Title-2".to_string())
-            .mentioned_mobile_list(vec![String::new(), "1234567890".to_string()])
-            .build();
+            .mentioned_mobile_list(vec![String::new(), "1234567890".to_string()]);
         assert_eq!(
             "{\"msgtype\":\"text\",\"text\":{\"content\":\"Title-2\",\"mentioned_mobile_list\":[\"\",\"1234567890\"]}}",
             serde_json::to_string(&text).unwrap()
@@ -249,7 +228,7 @@ mod message_tests {
     }
 
     fn serialize_markdown() {
-        let md = Message::markdown(r"# Markdown".to_string()).build();
+        let md = Message::markdown(r"# Markdown".to_string());
         assert_eq!(
             "{\"msgtype\":\"markdown\",\"markdown\":{\"content\":\"# Markdown\"}}",
             serde_json::to_string(&md).unwrap()
@@ -257,7 +236,7 @@ mod message_tests {
     }
 
     fn serialize_image() {
-        let img = Message::image(Image::new(b"image".to_vec())).build();
+        let img = Message::image(Image::new(b"image".to_vec()));
         assert_eq!(
             "{\"msgtype\":\"image\",\"image\":{\"base64\":\"aW1hZ2U=\",\"md5\":\"78805a221a988e79ef3f42d7c5bfd418\"}}",
             serde_json::to_string(&img).unwrap()
@@ -270,7 +249,7 @@ mod message_tests {
             "http://res.mail.qq.com/node/ww/wwopenmng/images/independent/doc/test_pic_msg1.png"
                 .to_string(),
         );
-        let news = Message::news(vec![Article::new("".to_string(), "".to_string()), air]).build();
+        let news = Message::news(vec![Article::new("".to_string(), "".to_string()), air]);
         assert_eq!(
             r#"{"msgtype":"news","news":{"articles":[{"title":"","url":""},{"title":"中秋节礼品领取","description":"今年中秋节公司有豪礼相送","url":"www.qq.com","picurl":"http://res.mail.qq.com/node/ww/wwopenmng/images/independent/doc/test_pic_msg1.png"}]}}"#,
             serde_json::to_string(&news).unwrap()

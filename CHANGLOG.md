@@ -3,7 +3,7 @@
 ## Features
 
 - Message type `image` and `news` support.
-- Use `MessageBuilder` to set `mentioned_list` and `mentioned_mobile_list`.
+- For setting `mentioned_list` and `mentioned_mobile_list` as independent methods.
 
 ## Performance
 

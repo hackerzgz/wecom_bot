@@ -227,7 +227,9 @@ mod botest {
     fn send_msg() {
         let bot = WeComBot::new("693a91f6-7xxx-4bc4-97a0-0ec2sifa5aaa".to_string()).unwrap();
         let resp: SendResp = bot
-            .send(Message::text("say hi to wecom bot power by rust".to_string()).build())
+            .send(Message::text(
+                "say hi to wecom bot power by rust".to_string(),
+            ))
             .unwrap();
 
         assert_eq!(resp.err_code, 93000);
@@ -239,7 +241,9 @@ mod botest {
         let bot =
             super::WeComBotAsync::new("693a91f6-7xxx-4bc4-97a0-0ec2sifa5aaa".to_string()).unwrap();
         let resp: SendResp = bot
-            .send(Message::markdown("> say hi to wecom bot power by rust".to_string()).build())
+            .send(Message::markdown(
+                "> say hi to wecom bot power by rust".to_string(),
+            ))
             .await
             .unwrap();
         assert_eq!(resp.err_code, 93000);
