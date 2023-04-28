@@ -5,6 +5,7 @@
 mod bot;
 mod image;
 mod message;
+mod upload;
 
 pub use bot::{WeComBot, WeComBotBuilder, WeComError};
 pub use image::Image;

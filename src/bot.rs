@@ -7,6 +7,7 @@ use serde::de::DeserializeOwned;
 use thiserror::Error;
 
 use crate::message::Message;
+use crate::upload::{MediaType, UploadResp};
 
 #[derive(Debug, Error)]
 #[non_exhaustive]
@@ -31,6 +32,8 @@ pub enum WeComError {
         #[from]
         source: io::Error,
     },
+    #[error("unknown upload media type: {0}")]
+    MediaType(String),
 }
 
 impl WeComError {
@@ -54,6 +57,7 @@ type WeComResult<T> = Result<T, WeComError>;
 
 pub struct WeComBot {
     url: String,
+    upload_url: String,
     client: reqwest::blocking::Client,
 }
 
@@ -77,6 +81,13 @@ impl WeComBot {
         }
 
         serde_json::from_reader::<_, T>(resp).map_err(WeComError::data_type::<T>)
+    }
+
+    pub fn upload(&self, media_type: MediaType) -> WeComResult<UploadResp> {
+
+self.client.post().form()
+
+        Ok(UploadResp::new())
     }
 }
 
@@ -115,6 +126,10 @@ impl WeComBotBuilder {
                 "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key={}",
                 self.key.unwrap(),
             ),
+            upload_url: format!(
+                "https://qyapi.weixin.qq.com/cgi-bin/webhook/upload_media?key={}",
+                self.key.unwrap(),
+            )
         })
     }
 
