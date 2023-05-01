@@ -1,6 +1,7 @@
 use std::any;
 use std::fmt::Debug;
 use std::io;
+use std::path::Path;
 use std::time::Duration;
 
 use serde::de::DeserializeOwned;
@@ -34,6 +35,8 @@ pub enum WeComError {
     },
     #[error("unknown upload media type: {0}")]
     MediaType(String),
+    #[error("failed to load upload file: {}", source)]
+    LoadUploadFile { source: io::Error },
 }
 
 impl WeComError {
@@ -48,8 +51,12 @@ impl WeComError {
         }
     }
 
-    pub fn image(source: io::Error) -> Self {
+    pub(crate) fn image(source: io::Error) -> Self {
         WeComError::ImageRead { source }
+    }
+
+    fn load_file(source: io::Error) -> Self {
+        WeComError::LoadUploadFile { source }
     }
 }
 
@@ -57,12 +64,16 @@ type WeComResult<T> = Result<T, WeComError>;
 
 pub struct WeComBot {
     url: String,
-    upload_url: String,
+    upload_base_url: String,
+
     client: reqwest::blocking::Client,
 }
 
 impl WeComBot {
-    fn new(key: String) -> WeComResult<WeComBot> {
+    fn new<K>(key: K) -> WeComResult<WeComBot>
+    where
+        K: Into<String>,
+    {
         WeComBotBuilder::new().key(key).build()
     }
 
@@ -83,11 +94,23 @@ impl WeComBot {
         serde_json::from_reader::<_, T>(resp).map_err(WeComError::data_type::<T>)
     }
 
-    pub fn upload(&self, media_type: MediaType) -> WeComResult<UploadResp> {
+    pub fn upload<P>(&self, media_type: MediaType, path: P) -> WeComResult<UploadResp>
+    where
+        P: AsRef<Path>,
+    {
+        let file = reqwest::blocking::multipart::Form::new()
+            .file("filename", path)
+            .map_err(WeComError::load_file)?;
 
-self.client.post().form()
+        let upload_url = media_type.format_upload_url(&self.upload_base_url);
+        let resp = self.client.post(upload_url).multipart(file).send()?;
+        let status = resp.status();
+        if status.is_server_error() {
+            return Err(WeComError::Http { status });
+        }
 
-        Ok(UploadResp::new())
+        let ret: UploadResp = resp.json()?;
+        Ok(ret)
     }
 }
 
@@ -109,9 +132,24 @@ impl WeComBotBuilder {
     }
 
     pub fn build(self) -> WeComResult<WeComBot> {
-        if self.key.is_none() {
-            return Err(WeComError::KeyNotFound);
-        }
+        let (url, upload_base_url) = match self.key {
+            None => return Err(WeComError::KeyNotFound),
+            Some(key) => {
+                if key.trim().len() == 0 {
+                    return Err(WeComError::KeyNotFound);
+                }
+                (
+                    format!(
+                        "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key={}",
+                        key
+                    ),
+                    format!(
+                        "https://qyapi.weixin.qq.com/cgi-bin/webhook/upload_media?key={}",
+                        key
+                    ),
+                )
+            }
+        };
 
         let client = self.client.unwrap_or(
             reqwest::blocking::Client::builder()
@@ -119,22 +157,18 @@ impl WeComBotBuilder {
                 .build()
                 .unwrap(),
         );
-
         Ok(WeComBot {
             client,
-            url: format!(
-                "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key={}",
-                self.key.unwrap(),
-            ),
-            upload_url: format!(
-                "https://qyapi.weixin.qq.com/cgi-bin/webhook/upload_media?key={}",
-                self.key.unwrap(),
-            )
+            url,
+            upload_base_url,
         })
     }
 
-    pub fn key(mut self, key: String) -> WeComBotBuilder {
-        self.key = Some(key);
+    pub fn key<K>(mut self, key: K) -> WeComBotBuilder
+    where
+        K: Into<String>,
+    {
+        self.key = Some(key.into());
         self
     }
 
@@ -147,12 +181,17 @@ impl WeComBotBuilder {
 #[cfg(feature = "async_api")]
 pub struct WeComBotAsync {
     url: String,
+    upload_base_url: String,
+
     client: reqwest::Client,
 }
 
 #[cfg(feature = "async_api")]
 impl WeComBotAsync {
-    fn new(key: String) -> WeComResult<WeComBotAsync> {
+    fn new<K>(key: K) -> WeComResult<WeComBotAsync>
+    where
+        K: Into<String>,
+    {
         WeComBotAsyncBuilder::new().key(key).build()
     }
 
@@ -178,6 +217,43 @@ impl WeComBotAsync {
 
         serde_json::from_slice::<T>(&resp.bytes().await?).map_err(WeComError::data_type::<T>)
     }
+
+    pub async fn upload<P>(&self, media_type: MediaType, path: P) -> WeComResult<UploadResp>
+    where
+        P: AsRef<Path> + Sized,
+    {
+        let content = tokio::fs::read(&path)
+            .await
+            .map_err(WeComError::load_file)?;
+
+        let filename = self.get_filename(path.as_ref());
+        let part = reqwest::multipart::Part::bytes(content).file_name(filename);
+        let form = reqwest::multipart::Form::new().part("filename", part);
+        let upload_url = media_type.format_upload_url(&self.upload_base_url);
+
+        let resp = self
+            .client
+            .post(upload_url)
+            .multipart(form)
+            .send()
+            .await
+            .map_err(WeComError::network)?;
+        let status = resp.status();
+        if status.is_server_error() {
+            return Err(WeComError::Http { status });
+        }
+
+        serde_json::from_slice::<UploadResp>(&resp.bytes().await?)
+            .map_err(WeComError::data_type::<UploadResp>)
+    }
+
+    fn get_filename(&self, p: &Path) -> String {
+        let name = match p.file_name() {
+            None => "",
+            Some(f) => f.to_str().unwrap(),
+        };
+        String::from(name)
+    }
 }
 
 #[cfg(feature = "async_api")]
@@ -201,9 +277,24 @@ impl WeComBotAsyncBuilder {
     }
 
     pub fn build(self) -> WeComResult<WeComBotAsync> {
-        if self.key.is_none() {
-            return Err(WeComError::KeyNotFound);
-        }
+        let (url, upload_base_url) = match self.key {
+            None => return Err(WeComError::KeyNotFound),
+            Some(key) => {
+                if key.trim().len() == 0 {
+                    return Err(WeComError::KeyNotFound);
+                }
+                (
+                    format!(
+                        "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key={}",
+                        key
+                    ),
+                    format!(
+                        "https://qyapi.weixin.qq.com/cgi-bin/webhook/upload_media?key={}",
+                        key
+                    ),
+                )
+            }
+        };
 
         let client = self.client.unwrap_or(
             reqwest::Client::builder()
@@ -214,15 +305,16 @@ impl WeComBotAsyncBuilder {
 
         Ok(WeComBotAsync {
             client,
-            url: format!(
-                "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key={}",
-                self.key.unwrap(),
-            ),
+            url,
+            upload_base_url,
         })
     }
 
-    pub fn key(mut self, key: String) -> WeComBotAsyncBuilder {
-        self.key = Some(key);
+    pub fn key<K>(mut self, key: K) -> WeComBotAsyncBuilder
+    where
+        K: Into<String>,
+    {
+        self.key = Some(key.into());
         self
     }
 
@@ -240,7 +332,7 @@ mod botest {
 
     #[test]
     fn send_msg() {
-        let bot = WeComBot::new("693a91f6-7xxx-4bc4-97a0-0ec2sifa5aaa".to_string()).unwrap();
+        let bot = WeComBot::new("693a91f6-7xxx-4bc4-97a0-0ec2sifa5aaa").unwrap();
         let resp: SendResp = bot
             .send(Message::text(
                 "say hi to wecom bot power by rust".to_string(),
@@ -250,11 +342,24 @@ mod botest {
         assert_eq!(resp.err_code, 93000);
     }
 
+    #[test]
+    fn upload_media() {
+        let bot = WeComBot::new("693a91f6-7xxx-4bc4-97a0-0ec2sifa5aaa").unwrap();
+        let resp = bot
+            .upload(
+                crate::MediaType::File,
+                "./src/tests/imgs/tiny-rust-logo.png",
+            )
+            .unwrap();
+
+        assert_eq!(resp.err_code, 0);
+        assert_ne!(resp.media_id, "");
+    }
+
     #[tokio::test]
     #[cfg(feature = "async_api")]
     async fn send_msg_async() {
-        let bot =
-            super::WeComBotAsync::new("693a91f6-7xxx-4bc4-97a0-0ec2sifa5aaa".to_string()).unwrap();
+        let bot = super::WeComBotAsync::new("693a91f6-7xxx-4bc4-97a0-0ec2sifa5aaa").unwrap();
         let resp: SendResp = bot
             .send(Message::markdown(
                 "> say hi to wecom bot power by rust".to_string(),
@@ -262,5 +367,20 @@ mod botest {
             .await
             .unwrap();
         assert_eq!(resp.err_code, 93000);
+    }
+
+    #[tokio::test]
+    #[cfg(feature = "async_api")]
+    async fn upload_media_async() {
+        let bot = super::WeComBotAsync::new("693a91f6-7xxx-4bc4-97a0-0ec2sifa5aaa").unwrap();
+        let resp = bot
+            .upload(
+                crate::MediaType::File,
+                "./src/tests/imgs/tiny-rust-logo.png",
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(resp.err_code, 0);
     }
 }

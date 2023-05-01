@@ -10,6 +10,7 @@ mod upload;
 pub use bot::{WeComBot, WeComBotBuilder, WeComError};
 pub use image::Image;
 pub use message::{Message, SendResp};
+pub use upload::{MediaType, UploadResp};
 
 #[cfg(feature = "async_api")]
 pub use bot::{WeComBotAsync, WeComBotAsyncBuilder};

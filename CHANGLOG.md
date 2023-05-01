@@ -2,8 +2,10 @@
 
 ## Features
 
+- Create WeComBot client Using static str, not `String`.
 - Message type `image` and `news` support.
 - For setting `mentioned_list` and `mentioned_mobile_list` as independent methods.
+- Add `upload` API to send local media files to support the `file` message type.
 
 ## Performance
 

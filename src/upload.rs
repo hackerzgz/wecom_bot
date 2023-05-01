@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
 use crate::WeComError;
 
@@ -32,8 +32,16 @@ impl ToString for MediaType {
             MediaType::Image => String::from("image"),
             MediaType::Voice => String::from("voice"),
             MediaType::Video => String::from("video"),
-            _ => panic!("media type missing match"),
         }
+    }
+}
+
+impl MediaType {
+    pub(crate) fn format_upload_url<U>(&self, base: U) -> String
+    where
+        U: Into<String>,
+    {
+        format!("{}&type={}", base.into(), self.to_string())
     }
 }
 
@@ -45,13 +53,13 @@ pub struct UploadResp {
     #[serde(rename = "errmsg")]
     pub err_msg: String,
 
-    #[serde(rename = "type")]
+    #[serde(rename = "type", default)]
     pub media_type: String,
 
-    #[serde(rename = "media_id")]
+    #[serde(rename = "media_id", default)]
     pub media_id: String,
 
-    #[serde(rename = "created_at")]
+    #[serde(rename = "created_at", default)]
     pub created_at: String,
 }
 
