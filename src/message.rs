@@ -8,6 +8,7 @@ static GROUP_REBOT_MSG_TEXT: &str = "text";
 static GROUP_REBOT_MSG_MARKDOWN: &str = "markdown";
 static GROUP_REBOT_MSG_IMAGE: &str = "image";
 static GROUP_REBOT_MSG_NEWS: &str = "news";
+static GROUP_REBOT_MSG_FILE: &str = "file";
 
 #[derive(Debug, Clone, Serialize)]
 enum MessageBody<'a> {
@@ -46,6 +47,11 @@ enum MessageBody<'a> {
     News {
         /// Article content, each news supports 1 to 8 pieces of articles message.
         articles: Vec<Article<'a>>,
+    },
+    #[serde(rename = "file")]
+    File {
+        /// File id, obtained through the wecom bot upload interface mentioned.
+        media_id: Cow<'a, str>,
     },
 }
 
@@ -123,6 +129,18 @@ impl<'a> Message<'a> {
         }
     }
 
+    pub fn file<S>(media_id: S) -> Self
+    where
+        S: Into<Cow<'a, str>>,
+    {
+        Self {
+            msg_type: GROUP_REBOT_MSG_FILE,
+            body: MessageBody::File {
+                media_id: media_id.into(),
+            },
+        }
+    }
+
     inject_iter_fields!(mentioned_list, MessageBody::Text);
 
     inject_iter_fields!(mentioned_mobile_list, MessageBody::Text);
@@ -197,6 +215,7 @@ mod message_tests {
         serialize_markdown();
         serialize_image();
         serialize_article();
+        serialize_file();
     }
 
     fn serialize_text() {
@@ -206,7 +225,7 @@ mod message_tests {
             serde_json::to_string(&text).unwrap()
         );
 
-        let text = Message::text("Title").mentioned_list(vec![String::new(), "uid2".to_string()]);
+        let text = Message::text("Title").mentioned_list(vec!["", "uid2"]);
         assert_eq!(
             "{\"msgtype\":\"text\",\"text\":{\"content\":\"Title\",\"mentioned_list\":[\"\",\"uid2\"]}}",
             serde_json::to_string(&text).unwrap()
@@ -219,8 +238,7 @@ mod message_tests {
             serde_json::to_string(&text).unwrap()
         );
 
-        let text = Message::text("Title-2".to_string())
-            .mentioned_mobile_list(vec![String::new(), "1234567890".to_string()]);
+        let text = Message::text("Title-2").mentioned_mobile_list(vec!["", "1234567890"]);
         assert_eq!(
             "{\"msgtype\":\"text\",\"text\":{\"content\":\"Title-2\",\"mentioned_mobile_list\":[\"\",\"1234567890\"]}}",
             serde_json::to_string(&text).unwrap()
@@ -228,7 +246,7 @@ mod message_tests {
     }
 
     fn serialize_markdown() {
-        let md = Message::markdown(r"# Markdown".to_string());
+        let md = Message::markdown(r"# Markdown");
         assert_eq!(
             "{\"msgtype\":\"markdown\",\"markdown\":{\"content\":\"# Markdown\"}}",
             serde_json::to_string(&md).unwrap()
@@ -244,15 +262,23 @@ mod message_tests {
     }
 
     fn serialize_article() {
-        let mut air = Article::new("中秋节礼品领取".to_string(), "www.qq.com".to_string());
-        air.desc("今年中秋节公司有豪礼相送".to_string()).pic(
-            "http://res.mail.qq.com/node/ww/wwopenmng/images/independent/doc/test_pic_msg1.png"
-                .to_string(),
+        let mut air = Article::new("中秋节礼品领取", "www.qq.com");
+        air.desc("今年中秋节公司有豪礼相送").pic(
+            "http://res.mail.qq.com/node/ww/wwopenmng/images/independent/doc/test_pic_msg1.png",
         );
-        let news = Message::news(vec![Article::new("".to_string(), "".to_string()), air]);
+        let news = Message::news(vec![Article::new("", ""), air]);
         assert_eq!(
             r#"{"msgtype":"news","news":{"articles":[{"title":"","url":""},{"title":"中秋节礼品领取","description":"今年中秋节公司有豪礼相送","url":"www.qq.com","picurl":"http://res.mail.qq.com/node/ww/wwopenmng/images/independent/doc/test_pic_msg1.png"}]}}"#,
             serde_json::to_string(&news).unwrap()
+        );
+    }
+
+    fn serialize_file() {
+        let file = Message::file("3a8asd892asd8asd");
+
+        assert_eq!(
+            r#"{"msgtype":"file","file":{"media_id":"3a8asd892asd8asd"}}"#,
+            serde_json::to_string(&file).unwrap(),
         );
     }
 }

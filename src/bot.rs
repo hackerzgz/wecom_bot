@@ -120,6 +120,26 @@ impl Debug for WeComBot {
     }
 }
 
+const WECOM_SEND_URL: &str = "https://qyapi.weixin.qq.com/cgi-bin/webhook/send";
+const WECOM_UPLOAD_URL: &str = "https://qyapi.weixin.qq.com/cgi-bin/webhook/upload_media";
+
+macro_rules! format_wecom_url {
+    ($key:expr) => {
+        match $key {
+            None => return Err(WeComError::KeyNotFound),
+            Some(k) => {
+                if k.trim().len() == 0 {
+                    return Err(WeComError::KeyNotFound);
+                }
+                (
+                    format!("{}?key={}", WECOM_SEND_URL, k),
+                    format!("{}?key={}", WECOM_UPLOAD_URL, k),
+                )
+            }
+        }
+    };
+}
+
 #[derive(Debug, Default)]
 pub struct WeComBotBuilder {
     key: Option<String>,
@@ -132,24 +152,7 @@ impl WeComBotBuilder {
     }
 
     pub fn build(self) -> WeComResult<WeComBot> {
-        let (url, upload_base_url) = match self.key {
-            None => return Err(WeComError::KeyNotFound),
-            Some(key) => {
-                if key.trim().len() == 0 {
-                    return Err(WeComError::KeyNotFound);
-                }
-                (
-                    format!(
-                        "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key={}",
-                        key
-                    ),
-                    format!(
-                        "https://qyapi.weixin.qq.com/cgi-bin/webhook/upload_media?key={}",
-                        key
-                    ),
-                )
-            }
-        };
+        let (url, upload_base_url) = format_wecom_url!(self.key);
 
         let client = self.client.unwrap_or(
             reqwest::blocking::Client::builder()
@@ -277,24 +280,7 @@ impl WeComBotAsyncBuilder {
     }
 
     pub fn build(self) -> WeComResult<WeComBotAsync> {
-        let (url, upload_base_url) = match self.key {
-            None => return Err(WeComError::KeyNotFound),
-            Some(key) => {
-                if key.trim().len() == 0 {
-                    return Err(WeComError::KeyNotFound);
-                }
-                (
-                    format!(
-                        "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key={}",
-                        key
-                    ),
-                    format!(
-                        "https://qyapi.weixin.qq.com/cgi-bin/webhook/upload_media?key={}",
-                        key
-                    ),
-                )
-            }
-        };
+        let (url, upload_base_url) = format_wecom_url!(self.key);
 
         let client = self.client.unwrap_or(
             reqwest::Client::builder()
@@ -354,6 +340,9 @@ mod botest {
 
         assert_eq!(resp.err_code, 0);
         assert_ne!(resp.media_id, "");
+
+        let resp: SendResp = bot.send(Message::file(resp.media_id)).unwrap();
+        assert_eq!(resp.err_code, 0);
     }
 
     #[tokio::test]
@@ -381,6 +370,9 @@ mod botest {
             .await
             .unwrap();
 
+        assert_eq!(resp.err_code, 0);
+
+        let resp: SendResp = bot.send(Message::file(resp.media_id)).await.unwrap();
         assert_eq!(resp.err_code, 0);
     }
 }
