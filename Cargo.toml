@@ -1,6 +1,6 @@
 [package]
 name = "wecom_bot"
-version = "0.1.1"
+version = "0.2.0"
 edition = "2021"
 description = "A WeCom Bot API lib for sending group messages"
 license = "Apache-2.0"

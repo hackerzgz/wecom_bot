@@ -70,6 +70,7 @@ pub struct WeComBot {
 }
 
 impl WeComBot {
+    /// Returns the default configuration of `WecomBot` client.
     fn new<K>(key: K) -> WeComResult<WeComBot>
     where
         K: Into<String>,
@@ -77,10 +78,12 @@ impl WeComBot {
         WeComBotBuilder::new().key(key).build()
     }
 
+    /// Returns a `WeComBotBuilder` to configure a `WecomBot` client.
     pub fn builder() -> WeComBotBuilder {
         WeComBotBuilder::new()
     }
 
+    /// Constructs the wecom bot `Message` and sends it to wecom bot API.
     pub fn send<T>(&self, msg: Message<'_>) -> WeComResult<T>
     where
         T: DeserializeOwned,
@@ -94,6 +97,7 @@ impl WeComBot {
         serde_json::from_reader::<_, T>(resp).map_err(WeComError::data_type::<T>)
     }
 
+    /// Constructs the file uploader to upload local file to the wecom bot server.
     pub fn upload<P>(&self, media_type: MediaType, path: P) -> WeComResult<UploadResp>
     where
         P: AsRef<Path>,
@@ -147,10 +151,14 @@ pub struct WeComBotBuilder {
 }
 
 impl WeComBotBuilder {
+    /// Constructs a new `WeComBotBuilder`
+    ///
+    /// This is the same as `WeComBot::builder()`
     pub fn new() -> WeComBotBuilder {
         Self::default()
     }
 
+    /// Returns a `WeComBot` client that use this `WeComBotBuilder` configuration.
     pub fn build(self) -> WeComResult<WeComBot> {
         let (url, upload_base_url) = format_wecom_url!(self.key);
 
@@ -167,6 +175,7 @@ impl WeComBotBuilder {
         })
     }
 
+    /// Sets the wecom bot webhook key to be used by client to build url
     pub fn key<K>(mut self, key: K) -> WeComBotBuilder
     where
         K: Into<String>,
@@ -191,6 +200,7 @@ pub struct WeComBotAsync {
 
 #[cfg(feature = "async_api")]
 impl WeComBotAsync {
+    /// Returns the default configuration of `WecomBotAsync` client.
     fn new<K>(key: K) -> WeComResult<WeComBotAsync>
     where
         K: Into<String>,
@@ -198,10 +208,12 @@ impl WeComBotAsync {
         WeComBotAsyncBuilder::new().key(key).build()
     }
 
+    /// Returns a `WeComBotAsyncBuilder` to configure a `WecomBotAsync` client.
     pub fn builder() -> WeComBotAsyncBuilder {
         WeComBotAsyncBuilder::new()
     }
 
+    /// Constructs the wecom bot `Message` and sends it to wecom bot API in async.
     pub async fn send<T>(&self, msg: Message<'_>) -> WeComResult<T>
     where
         T: DeserializeOwned,
@@ -221,6 +233,7 @@ impl WeComBotAsync {
         serde_json::from_slice::<T>(&resp.bytes().await?).map_err(WeComError::data_type::<T>)
     }
 
+    /// Constructs the file uploader to upload local file to the wecom bot server.
     pub async fn upload<P>(&self, media_type: MediaType, path: P) -> WeComResult<UploadResp>
     where
         P: AsRef<Path> + Sized,
@@ -275,10 +288,15 @@ pub struct WeComBotAsyncBuilder {
 
 #[cfg(feature = "async_api")]
 impl WeComBotAsyncBuilder {
+    /// Constructs a new `WeComBotAsyncBuilder`
+    ///
+    /// This is the same as `WeComBotAsync::builder()`
     pub fn new() -> WeComBotAsyncBuilder {
         Self::default()
     }
 
+    /// Returns a `WeComBotAsync` client that use this `WeComBotAsyncBuilder`
+    /// configuration.
     pub fn build(self) -> WeComResult<WeComBotAsync> {
         let (url, upload_base_url) = format_wecom_url!(self.key);
 
@@ -296,6 +314,7 @@ impl WeComBotAsyncBuilder {
         })
     }
 
+    /// Sets the wecom bot webhook key to be used by client to build url
     pub fn key<K>(mut self, key: K) -> WeComBotAsyncBuilder
     where
         K: Into<String>,

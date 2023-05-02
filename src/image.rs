@@ -16,7 +16,7 @@ impl Image {
         Self { content: data }
     }
 
-    fn from_file<P: AsRef<Path>>(path: P) -> Result<Self, WeComError> {
+    pub fn from_file<P: AsRef<Path>>(path: P) -> Result<Self, WeComError> {
         let mut file = File::open(path).map_err(WeComError::image)?;
         let mut buf: Vec<u8> = Vec::new();
         file.read_to_end(&mut buf).map_err(WeComError::image)?;
@@ -24,7 +24,7 @@ impl Image {
     }
 
     /// return encoded base64 and md5 of image data
-    pub fn encode(&self) -> (String, String) {
+    pub(crate) fn encode(&self) -> (String, String) {
         let b64 = general_purpose::STANDARD.encode(self.content.clone());
         let m5 = md5::compute(self.content.clone());
 
