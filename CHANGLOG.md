@@ -1,15 +1,15 @@
-# Version 0.2.0 (not-release)
+# Version 0.2.0 (2023-05-04)
 
 ## Features
 
-- Create WeComBot client Using static str, not `String`.
-- Message type `image`, `news` and `file` support.
+- Creating `WeComBot` client through static str is not limited to just the `String` type.
+- WeCom bot message type `image`, `news` and `file` support.
 - For setting `mentioned_list` and `mentioned_mobile_list` as independent methods.
-- Add `upload` API to send local media files to support the `file` message type.
+- Add `upload` API to send local media files to support the wecom bot message type `file`.
 
 ## Performance
 
-- Use `Cow<str>` instead of `String` in Message body to avoid memory copy.
+- Use `Cow<str>` instead of `String` in message body to avoid memory copy.
 
 # Version 0.1.0 (2023-03-28)
 
