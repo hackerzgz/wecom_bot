@@ -18,7 +18,9 @@ jobs:
       - name: Build
         run: cargo build --verbose
       - name: Run tests
-        run: cargo test --features=async_api --verbose
+        run: |
+          export WECOM_BOT_KEY='${{ secrets.WECOM_BOT_KEY }}';
+          cargo test --features=async_api --verbose
 
   rustfmt:
     name: rustfmt
