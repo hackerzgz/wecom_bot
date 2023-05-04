@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
 use crate::image::Image;
 
@@ -156,7 +156,7 @@ impl<'a> Message<'a> {
     /// # use wecom_bot::{Image, Message, SendResp, WeComBot, WeComError};
     ///
     /// # fn main() -> Result<(), WeComError> {
-    ///     let msg = Message::image(Image::from_file("sample.jpg")?);
+    ///     let msg = Message::image(Image::from_file("src/tests/imgs/profile.png")?);
     ///     let _rsp: SendResp = WeComBot::builder().key("xxx").build()?.send(msg)?;
     /// #   Ok(())
     /// # }
@@ -280,15 +280,6 @@ impl<'a> Article<'a> {
         self.pic_url = Some(pic.into());
         self
     }
-}
-
-#[derive(Debug, Default, Deserialize)]
-pub struct SendResp {
-    #[serde(rename = "errcode")]
-    pub err_code: i64,
-
-    #[serde(rename = "errmsg")]
-    pub err_msg: String,
 }
 
 #[cfg(test)]

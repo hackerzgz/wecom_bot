@@ -7,44 +7,45 @@ use std::time::Duration;
 use serde::de::DeserializeOwned;
 use thiserror::Error;
 
+use crate::media::MediaType;
 use crate::message::Message;
-use crate::upload::{MediaType, UploadResp};
+use crate::response::UploadResp;
 
 #[derive(Debug, Error)]
 #[non_exhaustive]
 pub enum WeComError {
     #[error("wecom bot key not set")]
     KeyNotFound,
-    #[error("network failed: {}", source)]
+    #[error("network failed: {source}")]
     Network {
         #[from]
         source: reqwest::Error,
     },
-    #[error("wecom bot server error: {}", status)]
+    #[error("wecom bot server error: {status}")]
     Http { status: reqwest::StatusCode },
-    #[error("could not parse {} data from JSON: {}", typename, source)]
+    #[error("could not parse {typename} data from JSON: {source}")]
     DataType {
         #[source]
         source: serde_json::Error,
         typename: &'static str,
     },
-    #[error("failed to read image file: {}", source)]
+    #[error("failed to read image file: {source}")]
     ImageRead {
         #[from]
         source: io::Error,
     },
+    #[error("failed to read upload file: {source}")]
+    FileRead { source: io::Error },
     #[error("unknown upload media type: {0}")]
     MediaType(String),
-    #[error("failed to load upload file: {}", source)]
-    LoadUploadFile { source: io::Error },
 }
 
 impl WeComError {
-    fn network(source: reqwest::Error) -> Self {
+    pub(crate) fn network(source: reqwest::Error) -> Self {
         WeComError::Network { source }
     }
 
-    fn data_type<T>(source: serde_json::Error) -> Self {
+    pub(crate) fn data_type<T>(source: serde_json::Error) -> Self {
         WeComError::DataType {
             source,
             typename: any::type_name::<T>(),
@@ -55,8 +56,8 @@ impl WeComError {
         WeComError::ImageRead { source }
     }
 
-    fn load_file(source: io::Error) -> Self {
-        WeComError::LoadUploadFile { source }
+    pub(crate) fn load_file(source: io::Error) -> Self {
+        WeComError::FileRead { source }
     }
 }
 
@@ -331,25 +332,39 @@ impl WeComBotAsyncBuilder {
 
 #[cfg(test)]
 mod botest {
-    use crate::message::{Message, SendResp};
+    use crate::message::Message;
+    use crate::response::SendResp;
+    use std::fs::read;
+    use std::io;
 
     use super::WeComBot;
 
+    fn read_wecom_bot_key() -> Result<String, io::Error> {
+        let key = match read("src/tests/secrets/key") {
+            Ok(v) => {
+                String::from_utf8(v).map_err(|_| io::Error::from(io::ErrorKind::InvalidData))?
+            }
+            Err(_) => std::env::var("WECOM_BOT_KEY")
+                .map_err(|_| io::Error::from(io::ErrorKind::NotFound))?,
+        };
+        Ok(key)
+    }
+
     #[test]
     fn send_msg() {
-        let bot = WeComBot::new("693a91f6-7xxx-4bc4-97a0-0ec2sifa5aaa").unwrap();
+        let bot = WeComBot::new(read_wecom_bot_key().unwrap()).unwrap();
         let resp: SendResp = bot
             .send(Message::text(
                 "say hi to wecom bot power by rust".to_string(),
             ))
             .unwrap();
 
-        assert_eq!(resp.err_code, 93000);
+        assert_eq!(resp.err_code, 0);
     }
 
     #[test]
     fn upload_media() {
-        let bot = WeComBot::new("693a91f6-7xxx-4bc4-97a0-0ec2sifa5aaa").unwrap();
+        let bot = WeComBot::new(read_wecom_bot_key().unwrap()).unwrap();
         let resp = bot
             .upload(
                 crate::MediaType::File,
@@ -367,20 +382,20 @@ mod botest {
     #[tokio::test]
     #[cfg(feature = "async_api")]
     async fn send_msg_async() {
-        let bot = super::WeComBotAsync::new("693a91f6-7xxx-4bc4-97a0-0ec2sifa5aaa").unwrap();
+        let bot = super::WeComBotAsync::new(read_wecom_bot_key().unwrap()).unwrap();
         let resp: SendResp = bot
             .send(Message::markdown(
                 "> say hi to wecom bot power by rust".to_string(),
             ))
             .await
             .unwrap();
-        assert_eq!(resp.err_code, 93000);
+        assert_eq!(resp.err_code, 0);
     }
 
     #[tokio::test]
     #[cfg(feature = "async_api")]
     async fn upload_media_async() {
-        let bot = super::WeComBotAsync::new("693a91f6-7xxx-4bc4-97a0-0ec2sifa5aaa").unwrap();
+        let bot = super::WeComBotAsync::new(read_wecom_bot_key().unwrap()).unwrap();
         let resp = bot
             .upload(
                 crate::MediaType::File,
