@@ -89,7 +89,7 @@ impl<'a> Message<'a> {
     ///
     /// The maxium length of content up to 2048 bytes.
     ///
-    /// https://developer.work.weixin.qq.com/document/path/91770#%E6%96%87%E6%9C%AC%E7%B1%BB%E5%9E%8B
+    /// <https://developer.work.weixin.qq.com/document/path/91770#%E6%96%87%E6%9C%AC%E7%B1%BB%E5%9E%8B>
     ///
     /// Use `mentioned_list` or `mentioned_mobile_list` to add someone you want
     /// to mentioned.
@@ -121,7 +121,7 @@ impl<'a> Message<'a> {
     ///
     /// The maxium length of content up to 4096 bytes.
     ///
-    /// https://developer.work.weixin.qq.com/document/path/91770#markdown%E7%B1%BB%E5%9E%8B
+    /// <https://developer.work.weixin.qq.com/document/path/91770#markdown%E7%B1%BB%E5%9E%8B>
     ///
     /// Use the `<@userid>` extend syntax in content to mention someone in the group.
     ///
@@ -150,7 +150,7 @@ impl<'a> Message<'a> {
     ///
     /// The image format only supports JPG or PNG, with maximum size up to 2Mb.
     ///
-    /// https://developer.work.weixin.qq.com/document/path/91770#%E5%9B%BE%E7%89%87%E7%B1%BB%E5%9E%8B
+    /// <https://developer.work.weixin.qq.com/document/path/91770#%E5%9B%BE%E7%89%87%E7%B1%BB%E5%9E%8B>
     ///
     /// ```
     /// # use wecom_bot::{Image, Message, SendResp, WeComBot, WeComError};
@@ -178,7 +178,7 @@ impl<'a> Message<'a> {
     /// The length of `articles` can be up to 8, with each `title` being a
     /// maximum of 128 bytes and each `description` being a maximum of 512 bytes.
     ///
-    /// https://developer.work.weixin.qq.com/document/path/91770#%E5%9B%BE%E6%96%87%E7%B1%BB%E5%9E%8B
+    /// <https://developer.work.weixin.qq.com/document/path/91770#%E5%9B%BE%E6%96%87%E7%B1%BB%E5%9E%8B>
     ///
     /// ```
     /// # use wecom_bot::{Article, Message, SendResp, WeComBot, WeComError};
@@ -201,7 +201,7 @@ impl<'a> Message<'a> {
     ///
     /// The required field `media_id` are obtained through the `upload` API returned.
     ///
-    /// https://developer.work.weixin.qq.com/document/path/91770#%E6%96%87%E4%BB%B6%E7%B1%BB%E5%9E%8B
+    /// <https://developer.work.weixin.qq.com/document/path/91770#%E6%96%87%E4%BB%B6%E7%B1%BB%E5%9E%8B>
     ///
     /// ```
     /// # use wecom_bot::{Article, Message, SendResp, WeComBot, WeComError};
