@@ -1,5 +1,4 @@
-WeComBot
-=====
+# WeComBot
 
 This library implements an interface to communicate with a WeCom Bot instance. Not
 all Message Type are implemented, but patches are welcome.
@@ -12,16 +11,16 @@ Add this to your `Cargo.toml` or run `cargo add wecom_bot`:
 
 ```toml
 [dependencies]
-wecom_bot = "0.1.0"
+wecom_bot = "0.2.0"
 ```
 
-If you need to use __async client__:
+If you need to use **async client**:
 
 ```bash
 $ cargo add wecom_bot --features=async_api
 ```
 
-Here's a simple example that send a markdown message:
+Here's a simple example that send markdown and text messages by using blocking api:
 
 ```rust
 use wecom_bot::{WeComBot, Message, SendResp};
@@ -30,6 +29,10 @@ fn main() {
     let bot = WeComBot::new("YOUR-BOT-KEY".to_string());
 
     let rsp: SendResp = bot.send(Message::markdown("> hello world"));
+    assert_eq!(rsp.err_code, 0);
+
+
+    let rsp: SendResp = bot.send(Message::text("hello world").mentioned_list(vec!["1000"]));
     assert_eq!(rsp.err_code, 0);
 }
 ```

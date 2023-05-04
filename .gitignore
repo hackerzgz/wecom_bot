@@ -1,2 +1,6 @@
 /target
 /Cargo.lock
+
+src/tests/secrets/*
+
+.DS_Store

@@ -1,6 +1,6 @@
 [package]
 name = "wecom_bot"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 description = "A WeCom Bot API lib for sending group messages"
 license = "Apache-2.0"
@@ -10,13 +10,16 @@ license = "Apache-2.0"
 [features]
 default = ["blocking_api"]
 blocking_api = []
-async_api = []
+async_api = ["tokio"]
 
 [dependencies]
-reqwest = { version = "0.11.14", features = ["json", "blocking"] }
+base64 = "0.21.0"
+md5 = "0.7.0"
+reqwest = { version = "0.11.14", features = ["json", "blocking", "multipart", "stream"] }
 serde = { version = "1.0.152", features = ["derive"] }
 serde_json = "1.0.93"
 thiserror = "1.0.38"
+tokio = { version = "1.26.0", features = ["fs"], default_features = false, optional = true}
 
 [dev-dependencies]
 tokio = { version = "1.26.0", features = ["macros"] }
