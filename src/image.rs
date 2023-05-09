@@ -7,15 +7,36 @@ use md5;
 
 use crate::bot::WeComError;
 
+/// An wecom bot format Image loaded from or image data or a path.
+///
+/// This struct only supports PNG or JPG formats.
+///
+/// # Example
+///
+/// ```
+/// use wecom_bot::{Image};
+///
+/// let raw_data = vec![0xff, 0x00, 0x00, 0xff, /* ... */];
+/// let logo = Image::new(raw_data);
+///
+/// let logo = Image::from_file("src/tests/imgs/tiny-rust-logo.png").unwrap();
+/// ```
 pub struct Image {
     content: Vec<u8>,
 }
 
 impl Image {
+    /// Creates a new [`Image`] instance from the given raw image data.
     pub fn new(data: Vec<u8>) -> Self {
         Self { content: data }
     }
 
+    /// Loads the image data from a file located at the given path.
+    ///
+    /// # Errors
+    ///
+    /// Returns a `WeComError::Image` variant if the file cannot be opened or read.
+    ///
     pub fn from_file<P: AsRef<Path>>(path: P) -> Result<Self, WeComError> {
         let mut file = File::open(path).map_err(WeComError::image)?;
         let mut buf: Vec<u8> = Vec::new();
@@ -23,10 +44,11 @@ impl Image {
         Ok(Self { content: buf })
     }
 
-    /// return encoded base64 and md5 of image data
+    /// Encodes the image data as base64 and computes its MD5 hash.
     pub(crate) fn encode(&self) -> (String, String) {
-        let b64 = general_purpose::STANDARD.encode(self.content.clone());
-        let m5 = md5::compute(self.content.clone());
+        let content = self.content.clone();
+        let b64 = general_purpose::STANDARD.encode(&content);
+        let m5 = md5::compute(&content);
 
         (b64, format!("{:x}", m5))
     }
