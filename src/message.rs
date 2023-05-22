@@ -74,7 +74,7 @@ macro_rules! inject_iter_fields {
     };
 }
 
-/// Represents a message to be sent by the WeCom bot.
+/// Represents a message to be sent by the `WeComBot`.
 #[derive(Debug, Clone, Serialize)]
 pub struct Message<'a> {
     /// Type of message.

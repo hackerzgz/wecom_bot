@@ -91,7 +91,7 @@ impl WeComError {
 
 type WeComResult<T> = Result<T, WeComError>;
 
-/// Represents a WeChat bot used for communication with the WeCom server.
+/// Represents a WeCom bot used for communication with the WeCom server.
 pub struct WeComBot {
     url: String,
     upload_base_url: String,
@@ -258,6 +258,7 @@ impl WeComBotBuilder {
     }
 }
 
+/// Represents an asynchronous WeCom bot used for communication with the WeCom server.
 #[cfg(feature = "async_api")]
 pub struct WeComBotAsync {
     url: String,
@@ -347,6 +348,7 @@ impl Debug for WeComBotAsync {
     }
 }
 
+/// Builder for creating a validated instance of `WeComBotAsync`.
 #[cfg(feature = "async_api")]
 #[derive(Debug, Default)]
 pub struct WeComBotAsyncBuilder {
