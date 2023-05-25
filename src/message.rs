@@ -74,6 +74,7 @@ macro_rules! inject_iter_fields {
     };
 }
 
+/// Represents a message to be sent by the `WeComBot`.
 #[derive(Debug, Clone, Serialize)]
 pub struct Message<'a> {
     /// Type of message.
@@ -229,7 +230,7 @@ impl<'a> Message<'a> {
     inject_iter_fields!(mentioned_mobile_list, MessageBody::Text);
 }
 
-/// elements of wecom bot message type news.
+/// Elements of wecom bot message type `news`.
 #[derive(Debug, Clone, Serialize)]
 pub struct Article<'a> {
     /// No more than 128 bytes, it will be automatically truncated if exceeded.

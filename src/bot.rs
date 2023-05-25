@@ -11,31 +11,59 @@ use crate::media::MediaType;
 use crate::message::Message;
 use crate::response::UploadResp;
 
+/// Represents the possible errors that can occur in the WeCom bot library.
 #[derive(Debug, Error)]
 #[non_exhaustive]
 pub enum WeComError {
+    /// WeCom bot key not found error.
+    ///
+    /// This error occurs when the WeCom bot key is not set.
     #[error("wecom bot key not set")]
     KeyNotFound,
+
+    /// Network error.
+    ///
+    /// This error occurs when a network operation fails.
     #[error("network failed: {source}")]
     Network {
         #[from]
         source: reqwest::Error,
     },
+
+    /// WeCom bot server error.
+    ///
+    /// This error occurs when the WeCom bot server returns an HTTP error status code.
     #[error("wecom bot server error: {status}")]
     Http { status: reqwest::StatusCode },
+
+    /// JSON data parsing error.
+    ///
+    /// This error occurs when there is a failure in parsing JSON data of a specific type.
     #[error("could not parse {typename} data from JSON: {source}")]
     DataType {
         #[source]
         source: serde_json::Error,
         typename: &'static str,
     },
+
+    /// Image file read error.
+    ///
+    /// This error occurs when there is a failure in reading an image file.
     #[error("failed to read image file: {source}")]
     ImageRead {
         #[from]
         source: io::Error,
     },
+
+    /// Upload file read error.
+    ///
+    /// This error occurs when there is a failure in reading an upload file.
     #[error("failed to read upload file: {source}")]
     FileRead { source: io::Error },
+
+    /// Unknown upload media type error.
+    ///
+    /// This error occurs when an unknown media type is encountered during upload.
     #[error("unknown upload media type: {0}")]
     MediaType(String),
 }
@@ -63,6 +91,7 @@ impl WeComError {
 
 type WeComResult<T> = Result<T, WeComError>;
 
+/// Represents a WeCom bot used for communication with the WeCom server.
 pub struct WeComBot {
     url: String,
     upload_base_url: String,
@@ -72,7 +101,7 @@ pub struct WeComBot {
 
 impl WeComBot {
     /// Returns the default configuration of `WecomBot` client.
-    fn new<K>(key: K) -> WeComResult<WeComBot>
+    pub fn new<K>(key: K) -> WeComResult<WeComBot>
     where
         K: Into<String>,
     {
@@ -84,7 +113,26 @@ impl WeComBot {
         WeComBotBuilder::new()
     }
 
-    /// Constructs the wecom bot `Message` and sends it to wecom bot API.
+    /// Sends a wecom bot group `Message` to the WeCom bot server.
+    ///
+    /// # Arguments
+    ///
+    /// * `msg` - The message to be sent, which can be of different types (text,
+    ///  markdown, image, etc.).
+    ///
+    /// # Returns
+    ///
+    /// Returns a `SendResp` struct representing the result of the message
+    /// sending operation.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use wecom_bot::{WeComBot, Message, SendResp};
+    ///
+    /// let bot = WeComBot::new("xxx-yyy-zzz").unwrap();
+    /// let rsp: SendResp = bot.send(Message::text("hello world!")).unwrap();
+    /// ```
     pub fn send<T>(&self, msg: Message<'_>) -> WeComResult<T>
     where
         T: DeserializeOwned,
@@ -98,7 +146,25 @@ impl WeComBot {
         serde_json::from_reader::<_, T>(resp).map_err(WeComError::data_type::<T>)
     }
 
-    /// Constructs the file uploader to upload local file to the wecom bot server.
+    /// Uploads a media file to the WeCom bot server.
+    ///
+    /// # Arguments
+    ///
+    /// * `media_type` - The MIME type or format of the uploaded file.
+    /// * `path` - The media file path to be uploaded.
+    ///
+    /// # Returns
+    ///
+    /// Returns an `UploadResp` struct representing the result of the media
+    /// upload operation.
+    ///
+    /// # Examples
+    /// ```rust
+    /// use wecom_bot::{WeComBot, MediaType, UploadResp};
+    ///
+    /// let bot = WeComBot::new("xxx-yyy-zzz").unwrap();
+    /// let rsp: UploadResp = bot.upload(MediaType::File, "src/tests/imgs/tiny-rust-logo.png").unwrap();
+    /// ```
     pub fn upload<P>(&self, media_type: MediaType, path: P) -> WeComResult<UploadResp>
     where
         P: AsRef<Path>,
@@ -145,6 +211,7 @@ macro_rules! format_wecom_url {
     };
 }
 
+/// Builder for creating a validated instance of `WeComBot`.
 #[derive(Debug, Default)]
 pub struct WeComBotBuilder {
     key: Option<String>,
@@ -152,9 +219,9 @@ pub struct WeComBotBuilder {
 }
 
 impl WeComBotBuilder {
-    /// Constructs a new `WeComBotBuilder`
+    /// Constructs a new `WeComBotBuilder`.
     ///
-    /// This is the same as `WeComBot::builder()`
+    /// This is the same as `WeComBot::builder()`.
     pub fn new() -> WeComBotBuilder {
         Self::default()
     }
@@ -176,7 +243,7 @@ impl WeComBotBuilder {
         })
     }
 
-    /// Sets the wecom bot webhook key to be used by client to build url
+    /// Sets the wecom bot webhook key to be used by client to build url.
     pub fn key<K>(mut self, key: K) -> WeComBotBuilder
     where
         K: Into<String>,
@@ -191,6 +258,7 @@ impl WeComBotBuilder {
     }
 }
 
+/// Represents an asynchronous WeCom bot used for communication with the WeCom server.
 #[cfg(feature = "async_api")]
 pub struct WeComBotAsync {
     url: String,
@@ -280,6 +348,7 @@ impl Debug for WeComBotAsync {
     }
 }
 
+/// Builder for creating a validated instance of `WeComBotAsync`.
 #[cfg(feature = "async_api")]
 #[derive(Debug, Default)]
 pub struct WeComBotAsyncBuilder {

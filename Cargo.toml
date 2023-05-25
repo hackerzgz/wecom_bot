@@ -5,6 +5,16 @@ edition = "2021"
 description = "A WeCom Bot API lib for sending group messages"
 license = "Apache-2.0"
 
+# crates.io metadata
+documentation = "https://docs.rs/wecom_bot"
+repository = "https://github.com/hackerzgz/wecom_bot"
+homepage = "https://github.com/hackerzgz/wecom_bot"
+
+# Crate build related
+exclude = [
+    "src/tests/*",
+]
+
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [features]

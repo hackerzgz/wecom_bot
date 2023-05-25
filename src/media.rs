@@ -2,10 +2,26 @@ use std::str::FromStr;
 
 use crate::WeComError;
 
+/// Builder for creating a validated instance of `WeComBot`.
 pub enum MediaType {
+    /// File media type.
+    ///
+    /// This media type is used for generic files.
     File,
+
+    /// Image media type.
+    ///
+    /// This media type is used for image files.
     Image,
+
+    /// Voice media type.
+    ///
+    /// This media type is used for voice or audio files.
     Voice,
+
+    /// Video media type.
+    ///
+    /// This media type is used for video files.
     Video,
 }
 

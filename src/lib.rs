@@ -29,4 +29,5 @@ pub use message::{Article, Message};
 pub use response::{SendResp, UploadResp};
 
 #[cfg(feature = "async_api")]
+#[cfg_attr(docsrs, doc(cfg(feature = "async_api")))]
 pub use bot::{WeComBotAsync, WeComBotAsyncBuilder};
